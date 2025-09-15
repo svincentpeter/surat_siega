@@ -1,22 +1,29 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8">
-  <title>Pratinjau Surat Tugas</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-</head>
-<body style="margin:0; background:#f0f2f5;">
-  @include('surat_tugas.partials._core', array_merge([
-  'tugas'   => $tugas,
-  'kop'     => $kop ?? null,
-  'context' => 'web',
-  'disable_sign_layer' => false,   // <- WAJIB: tampilkan TTD & Cap dari _core
-], isset($ttdImageB64) ? [
-  // ini variabel dari controller->buildSignAssets()
-  'ttdImageB64' => $ttdImageB64 ?? null,
-  'capImageB64' => $capImageB64 ?? null,
-  'ttdLeft' => $ttdLeft ?? null, 'ttdTop' => $ttdTop ?? null, 'ttdW' => $ttdW ?? null, 'ttdH' => $ttdH ?? null,
-  'capLeft' => $capLeft ?? null, 'capTop' => $capTop ?? null, 'capW' => $capW ?? null, 'capOpacity' => $capOpacity ?? null,
-] : []))
-</body>
-</html>
+{{-- Preview Surat Tugas (hasil final, paritas dengan PDF) --}}
+@php
+  $context = 'web';
+
+  // Ambil nilai yang tersimpan di database jika ada
+  $ttdW       = $ttdW ?? ($tugas->ttd_w_mm ?? null);
+  $capW       = $capW ?? ($tugas->cap_w_mm ?? null);
+  $capOpacity = $capOpacity ?? ($tugas->cap_opacity ?? null);
+
+  // Jika TTD & Cap sudah ada, kita perlu base64-nya untuk ditampilkan
+  // (Logika ini mungkin perlu Anda tambahkan di Controller yang memanggil view ini)
+  // Contoh:
+  // $ttdImageB64 = ... helper to get base64 from stored ttd path ...
+  // $capImageB64 = ... helper to get base64 from stored cap path ...
+@endphp
+
+<div class="container-fluid py-3">
+  @include('surat_tugas.partials._core', [
+    'context'      => $context,
+    'tugas'        => $tugas,
+    'kop'          => $kop ?? null,
+    'penerimaList' => $penerimaList ?? null,
+    'ttdW'         => $ttdW,
+    'capW'         => $capW,
+    'capOpacity'   => $capOpacity,
+    'ttdImageB64'  => $ttdImageB64 ?? null, // Pastikan variabel ini dikirim dari controller
+    'capImageB64'  => $capImageB64 ?? null, // Pastikan variabel ini dikirim dari controller
+  ])
+</div>

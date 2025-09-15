@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 04, 2025 at 07:31 AM
+-- Generation Time: Sep 15, 2025 at 05:35 AM
 -- Server version: 8.0.30
--- PHP Version: 8.2.26
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -336,7 +336,7 @@ CREATE TABLE `master_kop_surat` (
 --
 
 INSERT INTO `master_kop_surat` (`id`, `unit`, `header_path`, `footer_path`, `cap_path`, `cap_default_width_mm`, `cap_opacity`, `cap_offset_x_mm`, `cap_offset_y_mm`, `updated_by`, `created_at`, `updated_at`, `mode`, `judul_atas`, `subjudul`, `alamat`, `telepon`, `fax`, `email`, `website`, `logo_kiri_path`, `logo_kanan_path`, `tampilkan_logo_kiri`, `tampilkan_logo_kanan`) VALUES
-(1, NULL, NULL, NULL, 'kop/mOKxKWXWoH3XMn44zcgyiUpfCBWnoSnxmOa1rcij.png', 30, 85, 0, 0, 1, '2025-08-26 10:50:41', '2025-08-26 20:45:03', 'composed', 'SOEGIJAPRANATA', 'CATHOLIC UNIVERSITY', 'Jl. Pawiyatan Luhur IV/1 Bendan Duwur Semarang 50234', '(024) 8441555, 85050003', '(024) 8415429 – 8454265', 'unika@unika.ac.id', 'https://www.unika.ac.id', 'kop/phOkZpewAN19m2gs4MAxcsUHj15eqqRJijNv9Q3y.jpg', 'kop/AeFAlfLkcl8WU3uwmEkenDXgbE0YecmydqKqyj8E.png', 0, 1);
+(1, NULL, NULL, NULL, 'kop/mOKxKWXWoH3XMn44zcgyiUpfCBWnoSnxmOa1rcij.png', 30, 85, 0, 0, 1, '2025-08-26 10:50:41', '2025-09-14 01:24:17', 'composed', 'SOEGIJAPRANATA', 'CATHOLIC UNIVERSITY', 'Jl. Pawiyatan Luhur IV/1 Bendan Duwur Semarang 50234', '(024) 8441555, 85050003', '(024) 8415429 – 8454265', 'unika@unika.ac.id', 'https://www.unika.ac.id', 'kop/phOkZpewAN19m2gs4MAxcsUHj15eqqRJijNv9Q3y.jpg', 'kop/yIn0CbH3EdJGKjw7Kk23em9jZr1OFApo6EfQ3WXt.png', 0, 1);
 
 -- --------------------------------------------------------
 
@@ -388,7 +388,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (34, '2025_08_26_155428_extend_master_kop_surat_for_structured_header', 19),
 (35, '2025_09_03_191500_create_user_signatures_table', 20),
 (36, '2025_09_03_191502_add_signature_fields_to_tugas_and_keputusan', 20),
-(37, '2025_09_03_191502_extend_master_kop_surat_add_stamp_layout', 20);
+(37, '2025_09_03_191502_extend_master_kop_surat_add_stamp_layout', 20),
+(38, '2025_09_15_025626_add_sign_dimensions_to_tugas_header_table', 21);
 
 -- --------------------------------------------------------
 
@@ -423,6 +424,18 @@ CREATE TABLE `notifikasi` (
   `dibuat_pada` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+--
+-- Dumping data for table `notifikasi`
+--
+
+INSERT INTO `notifikasi` (`id`, `pengguna_id`, `tipe`, `referensi_id`, `pesan`, `dibaca`, `dibuat_pada`) VALUES
+(1, 3, 'surat_tugas', 9, 'Surat Tugas 001/B.10.6/TG/UNIKA/IX/2025 menunggu persetujuan Anda.', 0, '2025-09-13 23:47:54'),
+(2, 10, 'surat_tugas', 7, 'Surat Tugas 006/B.3.5/TG/UNIKA/VIII/2025 menunggu persetujuan Anda.', 0, '2025-09-14 06:55:01'),
+(3, 1, 'surat_tugas', 11, 'Surat Tugas 003/B.8.2/TG/UNIKA/IX/2025 telah disetujui.', 0, '2025-09-14 22:34:13'),
+(4, 16, 'surat_tugas', 11, 'Anda terdaftar sebagai penerima pada Surat Tugas 003/B.8.2/TG/UNIKA/IX/2025.', 0, '2025-09-14 22:34:13'),
+(5, 17, 'surat_tugas', 11, 'Anda terdaftar sebagai penerima pada Surat Tugas 003/B.8.2/TG/UNIKA/IX/2025.', 0, '2025-09-14 22:34:13'),
+(6, 18, 'surat_tugas', 11, 'Anda terdaftar sebagai penerima pada Surat Tugas 003/B.8.2/TG/UNIKA/IX/2025.', 0, '2025-09-14 22:34:13');
+
 -- --------------------------------------------------------
 
 --
@@ -449,16 +462,16 @@ CREATE TABLE `pengguna` (
 --
 
 INSERT INTO `pengguna` (`id`, `email`, `sandi_hash`, `nama_lengkap`, `jabatan`, `peran_id`, `status`, `created_at`, `updated_at`, `last_activity`, `deleted_at`, `remember_token`) VALUES
-(1, 'agustina.anggitasari@unika.ac.id', '$2y$12$0rYDf0RqcBpaABHw3vaOxe3LV6UxLazy9R85vBmmwA8juagm6Xadq', 'AGUSTINA ALAM ANGGITASARI, SE., MM', 'Ka. TU Fakultas Ilmu Komputer', 1, 'aktif', '2025-04-22 03:15:27', '2025-09-04 07:29:45', '2025-09-04 07:29:45', NULL, 'tQljhslaDD9WX8Fp8T20u1DBAIUt9kdhcZN2yMBS0MW6t99HotCKgriDpagK'),
+(1, 'agustina.anggitasari@unika.ac.id', '$2y$12$0rYDf0RqcBpaABHw3vaOxe3LV6UxLazy9R85vBmmwA8juagm6Xadq', 'AGUSTINA ALAM ANGGITASARI, SE., MM', 'Ka. TU Fakultas Ilmu Komputer', 1, 'aktif', '2025-04-22 03:15:27', '2025-09-14 13:55:06', '2025-09-14 13:55:06', NULL, '4XHwMMVvLJRGLrfe5oDw6DrsmiNxOklZ4oMrpBXWrbaTOLRFKNIEIN2splnC'),
 (2, 'kariyani.spd@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'KARIYANI, S.Pd', 'Ka. TU Fakultas Ilmu Komputer', 1, 'aktif', '2025-04-22 03:15:27', '2025-08-01 23:28:10', NULL, NULL, NULL),
-(3, 'bernhardinus.harnadi@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'Prof. BERNARDINUS HARNADI, ST., MT., Ph.D.', NULL, 3, 'aktif', '2025-04-22 03:15:27', NULL, NULL, NULL, NULL),
+(3, 'bernhardinus.harnadi@unika.ac.id', '$2y$12$rr.ntE7OagwdG25kLxSLwOnZwIaq72oImrbM8jXOkn6AEM62QRIY2', 'Prof. BERNARDINUS HARNADI, ST., MT., Ph.D.', NULL, 3, 'aktif', '2025-04-22 03:15:27', '2025-09-15 05:34:47', '2025-09-15 05:34:47', NULL, NULL),
 (4, 'muh.khudori@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'MUH KHUDORI', NULL, 6, 'aktif', '2025-04-22 03:15:27', '2025-08-02 16:39:31', NULL, NULL, NULL),
 (5, 'paulus.sapto@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'PAULUS SAPTO NUGROHO', NULL, 6, 'aktif', '2025-04-22 03:15:27', '2025-08-02 16:39:36', NULL, NULL, NULL),
 (6, 'bambang.setiawan@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'BAMBANG SETIAWAN, ST', NULL, 6, 'aktif', '2025-04-22 03:15:27', '2025-08-02 16:39:39', NULL, NULL, NULL),
 (7, 'erdhi.nugroho@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'ERDHI WIDYARTO NUGROHO, ST., MT', NULL, 5, 'aktif', '2025-04-22 03:15:27', '2025-08-02 16:39:43', NULL, NULL, NULL),
 (8, 'fx.hendra@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'FX. HENDRA PRASETYA, ST, MT', NULL, 5, 'aktif', '2025-04-22 03:15:27', '2025-08-02 16:39:48', NULL, NULL, NULL),
 (9, 'tecla.chandrawati@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'Dr. TECLA BRENDA CHANDRAWATI, S.T., MT', NULL, 5, 'aktif', '2025-04-22 03:15:27', '2025-08-02 16:39:51', NULL, NULL, NULL),
-(10, 'ridwan.sanjaya@unika.ac.id', '$2y$12$VRlxXvgiT0gdC3mVx0vp6Oct3Q/VPnmvACYjDz3n.DKotAIkG1QrS', 'Prof. Dr. F. RIDWAN SANJAYA, SE.,S.KOM., MS.IEC', NULL, 2, 'aktif', '2025-04-22 03:15:27', '2025-09-04 07:21:01', '2025-09-04 07:21:01', NULL, NULL),
+(10, 'ridwan.sanjaya@unika.ac.id', '$2y$12$VRlxXvgiT0gdC3mVx0vp6Oct3Q/VPnmvACYjDz3n.DKotAIkG1QrS', 'Prof. Dr. F. RIDWAN SANJAYA, SE.,S.KOM., MS.IEC', NULL, 2, 'aktif', '2025-04-22 03:15:27', '2025-09-15 04:42:28', '2025-09-15 04:42:28', NULL, NULL),
 (11, 'alb.dwiw@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'ALBERTUS DWIYOGA WIDIANTORO, S.Kom., M.Kom', NULL, 4, 'aktif', '2025-04-22 03:15:27', NULL, NULL, NULL, NULL),
 (12, 'agus.cahyo@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'AGUS CAHYO NUGROHO, S.Kom., M.T', NULL, 5, 'aktif', '2025-04-22 03:15:27', '2025-08-02 16:40:02', NULL, NULL, NULL),
 (13, 'andre.pamudji@unika.ac.id', '$2b$12$1Ps4Q4F7MLPQgfa86NQIGOuHy7pjiFiLZA.4Bp3qUhPYTfOvwpUfS', 'ANDRE KURNIAWAN PAMUDJI, S.Kom., M.Ling', NULL, 5, 'aktif', '2025-04-22 03:15:27', '2025-08-02 16:40:10', NULL, NULL, NULL),
@@ -517,7 +530,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('n2gESkr2pZqYQu4oFERqXlV2GcM0wcZ41Zmi2gFb', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoid2lQUjNuZzN1Y2dXQ1hOVEpNbldUb3A3Qjd2bUliU0pydzVhQ1ljWSI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzU6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9zdXJhdF90dWdhcy84Ijt9czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTt9', 1756970985);
+('pTt23h8wag1idzrybL8u7yjBpEC9A8ZoXDLvAsd9', 3, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36 OPR/121.0.0.0', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiSkdIM3lsakdWVFljZUJaWU9TUHNiTDNRdGY4aE1TVjFuQmVjcWhOZCI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTY6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9zdXJhdF90dWdhcy83L3ByZXZpZXc/dj0xNzU3ODU4OTM2Ijt9czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6Mzt9', 1757914487);
 
 -- --------------------------------------------------------
 
@@ -633,6 +646,9 @@ CREATE TABLE `tugas_header` (
   `penandatangan` bigint UNSIGNED DEFAULT NULL,
   `ttd_config` json DEFAULT NULL,
   `cap_config` json DEFAULT NULL,
+  `ttd_w_mm` smallint UNSIGNED DEFAULT NULL COMMENT 'Lebar TTD dalam mm',
+  `cap_w_mm` smallint UNSIGNED DEFAULT NULL COMMENT 'Lebar Cap dalam mm',
+  `cap_opacity` decimal(3,2) DEFAULT NULL COMMENT 'Opacity Cap (0.00 - 1.00)',
   `next_approver` bigint UNSIGNED DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
@@ -645,14 +661,18 @@ CREATE TABLE `tugas_header` (
 -- Dumping data for table `tugas_header`
 --
 
-INSERT INTO `tugas_header` (`id`, `nomor`, `tanggal_asli`, `status_surat`, `nomor_surat`, `tanggal_surat`, `submitted_at`, `signed_at`, `dibuat_oleh`, `dibuat_pada`, `dikunci_pada`, `file_path`, `signed_pdf_path`, `nomor_status`, `nama_pembuat`, `no_bin`, `tahun`, `semester`, `no_surat_manual`, `nama_umum`, `asal_surat`, `status_penerima`, `jenis_tugas`, `tugas`, `detail_tugas`, `detail_tugas_id`, `waktu_mulai`, `waktu_selesai`, `tempat`, `redaksi_pembuka`, `penutup`, `tembusan`, `penandatangan`, `ttd_config`, `cap_config`, `next_approver`, `created_at`, `updated_at`, `kode_surat`, `bulan`, `klasifikasi_surat_id`) VALUES
-(1, 'ST-001/UNIKA/2025', '2025-05-01 00:00:00', 'draft', NULL, NULL, NULL, NULL, 1, '2025-06-01 22:53:10', NULL, NULL, NULL, 'reserved', 1, NULL, 2025, 'Genap', NULL, 'Surat Tugas Kegiatan 1', 1, 'dosen', 'Seminar', '', NULL, 16, '2025-05-10 00:00:00', '2025-05-12 00:00:00', 'Aula UNIKA', NULL, 'Demikian, terima kasih.', NULL, 4, NULL, NULL, 3, '2025-06-01 22:53:10', '2025-06-01 22:53:10', NULL, NULL, NULL),
-(2, 'ST-002/UNIKA/2025', '2025-06-01 00:00:00', 'disetujui', '002/UNIKA/2025', '2025-06-01', '2025-06-02 05:53:10', NULL, 2, '2025-06-01 22:53:10', '2025-06-01 22:53:10', NULL, NULL, 'locked', 2, NULL, 2025, 'Genap', NULL, 'Surat Tugas Kegiatan 2', 2, 'tendik', 'Pelatihan', '', NULL, 16, '2025-06-10 00:00:00', '2025-06-12 00:00:00', 'Ruang Rapat', NULL, 'Harap dilaksanakan sebaik-baiknya.', NULL, 3, NULL, NULL, 4, '2025-06-01 22:53:10', '2025-06-01 22:53:10', NULL, NULL, NULL),
-(4, '002/TG/UNIKA/II/2025', '2025-07-31 00:00:00', 'draft', NULL, NULL, NULL, NULL, 1, '2025-07-31 11:08:30', NULL, NULL, NULL, 'reserved', 1, NULL, 2025, 'Genap', NULL, NULL, 10, 'dosen', 'Bimbingan', 'Koordinator kelompok MK/Rumpun/Konsorsium', NULL, 16, '2025-07-31 00:00:00', '2025-07-31 00:00:00', 'Jogja', 'Test', NULL, NULL, 10, NULL, NULL, NULL, '2025-07-31 04:08:30', '2025-08-01 21:08:10', NULL, NULL, NULL),
-(5, '003/TG/UNIKA/II/2025', '2025-07-31 00:00:00', 'pending', NULL, NULL, '2025-07-31 14:49:20', NULL, 1, '2025-07-31 11:44:02', NULL, NULL, NULL, 'reserved', 1, 'FIKOM/006', 2025, 'Genap', NULL, 'Surat Tugas Kegiatan 3', 4, 'dosen', 'Seminar', '', NULL, 16, '2025-07-31 00:00:00', '2025-07-31 00:00:00', 'Aula UNIKA', NULL, NULL, NULL, 4, NULL, NULL, 4, '2025-07-31 04:44:02', '2025-07-31 07:49:20', NULL, NULL, NULL),
-(6, '001/TG/UNIKA/I/2025', '2025-08-01 09:30:10', 'disetujui', NULL, '2025-09-04', '2025-08-01 09:30:10', '2025-09-04 00:20:32', 1, '2025-08-01 09:30:10', NULL, NULL, 'private/surat_tugas/signed/6.pdf', 'reserved', 1, NULL, 2025, 'Ganjil', NULL, NULL, 10, 'dosen', 'Bimbingan', 'Koordinator kelompok MK/Rumpun/Konsorsium', NULL, 16, '2025-08-01 09:29:00', '2025-08-01 11:29:00', NULL, NULL, NULL, NULL, 10, '{\"path\": \"private/ttd/10.png\", \"show\": true, \"offset_x\": -38, \"offset_y\": 72, \"width_mm\": 51, \"height_mm\": 22}', '{\"path\": \"kop/mOKxKWXWoH3XMn44zcgyiUpfCBWnoSnxmOa1rcij.png\", \"show\": true, \"opacity\": 85, \"offset_x\": 2, \"offset_y\": 70, \"width_mm\": 30}', 10, '2025-08-01 02:30:10', '2025-09-04 00:20:35', NULL, NULL, NULL),
-(7, '006/B.3.5/TG/UNIKA/I/2025', '2025-08-02 17:30:55', 'draft', NULL, '2025-08-01', NULL, NULL, 1, '2025-08-02 17:30:55', NULL, NULL, NULL, 'reserved', 1, NULL, 2025, 'Ganjil', NULL, 'Bimbingan', 10, 'dosen', 'Bimbingan', 'Bimbingan Mahasiswa/Akademik', '<p><strong>Keren</strong></p>', 16, '2025-08-02 17:29:00', '2025-08-02 19:29:00', 'HC Lt 8', 'Test', NULL, NULL, 10, NULL, NULL, NULL, '2025-08-02 10:30:55', '2025-08-25 21:13:04', NULL, NULL, 30),
-(8, '010/B.10.1/TG/UNIKA/VIII/2025', '2025-08-03 07:57:06', 'disetujui', NULL, '2025-09-03', '2025-08-03 07:57:06', '2025-09-03 13:39:16', 1, '2025-08-03 07:57:06', NULL, NULL, 'private/surat_tugas/signed/8.pdf', 'reserved', 1, NULL, 2025, 'Ganjil', NULL, 'Bimbingan', 10, 'tendik', 'Bimbingan', 'Koordinator Tugas MK', '<p>WOW</p>', 16, '2025-08-03 07:56:00', '2025-08-03 09:56:00', NULL, 'Coba', 'Coba', NULL, 10, NULL, NULL, 10, '2025-08-03 00:57:06', '2025-09-03 13:39:18', NULL, 'VIII', 81);
+INSERT INTO `tugas_header` (`id`, `nomor`, `tanggal_asli`, `status_surat`, `nomor_surat`, `tanggal_surat`, `submitted_at`, `signed_at`, `dibuat_oleh`, `dibuat_pada`, `dikunci_pada`, `file_path`, `signed_pdf_path`, `nomor_status`, `nama_pembuat`, `no_bin`, `tahun`, `semester`, `no_surat_manual`, `nama_umum`, `asal_surat`, `status_penerima`, `jenis_tugas`, `tugas`, `detail_tugas`, `detail_tugas_id`, `waktu_mulai`, `waktu_selesai`, `tempat`, `redaksi_pembuka`, `penutup`, `tembusan`, `penandatangan`, `ttd_config`, `cap_config`, `ttd_w_mm`, `cap_w_mm`, `cap_opacity`, `next_approver`, `created_at`, `updated_at`, `kode_surat`, `bulan`, `klasifikasi_surat_id`) VALUES
+(1, 'ST-001/UNIKA/2025', '2025-05-01 00:00:00', 'draft', NULL, NULL, NULL, NULL, 1, '2025-06-01 22:53:10', NULL, NULL, NULL, 'reserved', 1, NULL, 2025, 'Genap', NULL, 'Surat Tugas Kegiatan 1', 1, 'dosen', 'Seminar', '', NULL, 16, '2025-05-10 00:00:00', '2025-05-12 00:00:00', 'Aula UNIKA', NULL, 'Demikian, terima kasih.', NULL, 4, NULL, NULL, NULL, NULL, NULL, 3, '2025-06-01 22:53:10', '2025-06-01 22:53:10', NULL, NULL, NULL),
+(2, 'ST-002/UNIKA/2025', '2025-06-01 00:00:00', 'disetujui', '002/UNIKA/2025', '2025-06-01', '2025-06-02 05:53:10', NULL, 2, '2025-06-01 22:53:10', '2025-06-01 22:53:10', NULL, NULL, 'locked', 2, NULL, 2025, 'Genap', NULL, 'Surat Tugas Kegiatan 2', 2, 'tendik', 'Pelatihan', '', NULL, 16, '2025-06-10 00:00:00', '2025-06-12 00:00:00', 'Ruang Rapat', NULL, 'Harap dilaksanakan sebaik-baiknya.', NULL, 3, NULL, NULL, NULL, NULL, NULL, 4, '2025-06-01 22:53:10', '2025-06-01 22:53:10', NULL, NULL, NULL),
+(4, '002/TG/UNIKA/II/2025', '2025-07-31 00:00:00', 'draft', NULL, NULL, NULL, NULL, 1, '2025-07-31 11:08:30', NULL, NULL, NULL, 'reserved', 1, NULL, 2025, 'Genap', NULL, NULL, 10, 'dosen', 'Bimbingan', 'Koordinator kelompok MK/Rumpun/Konsorsium', NULL, 16, '2025-07-31 00:00:00', '2025-07-31 00:00:00', 'Jogja', 'Test', NULL, NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL, '2025-07-31 04:08:30', '2025-08-01 21:08:10', NULL, NULL, NULL),
+(5, '003/TG/UNIKA/II/2025', '2025-07-31 00:00:00', 'pending', NULL, NULL, '2025-07-31 14:49:20', NULL, 1, '2025-07-31 11:44:02', NULL, NULL, NULL, 'reserved', 1, 'FIKOM/006', 2025, 'Genap', NULL, 'Surat Tugas Kegiatan 3', 4, 'dosen', 'Seminar', '', NULL, 16, '2025-07-31 00:00:00', '2025-07-31 00:00:00', 'Aula UNIKA', NULL, NULL, NULL, 4, NULL, NULL, NULL, NULL, NULL, 4, '2025-07-31 04:44:02', '2025-07-31 07:49:20', NULL, NULL, NULL),
+(6, '001/TG/UNIKA/I/2025', '2025-08-01 09:30:10', 'disetujui', NULL, '2025-09-04', '2025-08-01 09:30:10', '2025-09-04 00:20:32', 1, '2025-08-01 09:30:10', NULL, NULL, 'private/surat_tugas/signed/6.pdf', 'reserved', 1, NULL, 2025, 'Ganjil', NULL, NULL, 10, 'dosen', 'Bimbingan', 'Koordinator kelompok MK/Rumpun/Konsorsium', NULL, 16, '2025-08-01 09:29:00', '2025-08-01 11:29:00', NULL, NULL, NULL, NULL, 10, '{\"path\": \"private/ttd/10.png\", \"show\": true, \"offset_x\": -38, \"offset_y\": 72, \"width_mm\": 51, \"height_mm\": 22}', '{\"path\": \"kop/mOKxKWXWoH3XMn44zcgyiUpfCBWnoSnxmOa1rcij.png\", \"show\": true, \"opacity\": 85, \"offset_x\": 2, \"offset_y\": 70, \"width_mm\": 30}', NULL, NULL, NULL, 10, '2025-08-01 02:30:10', '2025-09-04 00:20:35', NULL, NULL, NULL),
+(7, '006/B.3.5/TG/UNIKA/VIII/2025', '2025-08-02 17:30:55', 'disetujui', NULL, '2025-08-01', '2025-09-14 13:55:01', '2025-09-14 07:08:54', 1, '2025-08-02 17:30:55', NULL, NULL, 'private/surat_tugas/signed/7.pdf', 'reserved', 1, NULL, 2025, 'Ganjil', NULL, 'Bimbingan', 10, 'dosen', 'Bimbingan', 'Bimbingan Mahasiswa/Akademik', '<p><strong>Keren</strong></p>', 16, '2025-08-02 17:29:00', '2025-08-02 19:29:00', 'HC Lt 8', 'Test', NULL, NULL, 10, '{\"path\": \"private/ttd/10.png\", \"show\": true, \"offset_x\": 118, \"offset_y\": 17, \"width_mm\": 35, \"height_mm\": 15, \"base_top_mm\": 20, \"base_left_mm\": 15}', '{\"path\": \"kop/mOKxKWXWoH3XMn44zcgyiUpfCBWnoSnxmOa1rcij.png\", \"show\": true, \"opacity\": 85, \"offset_x\": 102, \"offset_y\": 14, \"width_mm\": 30, \"base_top_mm\": 15, \"base_left_mm\": 35}', NULL, NULL, NULL, 10, '2025-08-02 10:30:55', '2025-09-14 07:08:56', NULL, 'VIII', 30),
+(8, '010/B.10.1/TG/UNIKA/VIII/2025', '2025-08-03 07:57:06', 'disetujui', NULL, '2025-09-03', '2025-08-03 07:57:06', '2025-09-03 13:39:16', 1, '2025-08-03 07:57:06', NULL, NULL, 'private/surat_tugas/signed/8.pdf', 'reserved', 1, NULL, 2025, 'Ganjil', NULL, 'Bimbingan', 10, 'tendik', 'Bimbingan', 'Koordinator Tugas MK', '<p>WOW</p>', 16, '2025-08-03 07:56:00', '2025-08-03 09:56:00', NULL, 'Coba', 'Coba', NULL, 10, NULL, NULL, NULL, NULL, NULL, 10, '2025-08-03 00:57:06', '2025-09-03 13:39:18', NULL, 'VIII', 81),
+(9, '001/B.10.6/TG/UNIKA/IX/2025', NULL, 'disetujui', NULL, '2025-09-14', NULL, '2025-09-14 01:27:19', 1, '2025-09-14 06:47:54', NULL, NULL, 'private/surat_tugas/signed/9.pdf', 'reserved', 1, NULL, 2025, NULL, NULL, 'Surat Dekan', 3, 'dosen', 'Pengabdian', 'Reviewer Penelitian dan Pengabdian di lingkungan Unika', NULL, 13, '2025-09-14 06:46:00', '2025-09-14 08:46:00', 'Ruang Teater TA', 'Sehubung', 'Demikian', NULL, 3, '{\"path\": \"private/ttd/3.png\", \"show\": true, \"offset_x\": -33, \"offset_y\": 77, \"width_mm\": 35, \"height_mm\": 15, \"base_top_mm\": 205, \"base_left_mm\": 108}', '{\"path\": \"kop/mOKxKWXWoH3XMn44zcgyiUpfCBWnoSnxmOa1rcij.png\", \"show\": true, \"opacity\": 85, \"offset_x\": 0, \"offset_y\": 68, \"width_mm\": 30, \"base_top_mm\": 185, \"base_left_mm\": 125}', NULL, NULL, NULL, 3, '2025-09-13 23:47:54', '2025-09-14 01:27:22', NULL, 'IX', 86),
+(10, '002/B.7.2/TG/UNIKA/IX/2025', NULL, 'pending', NULL, NULL, '2025-09-15 12:04:37', NULL, 1, '2025-09-15 05:04:37', NULL, NULL, NULL, 'reserved', 1, NULL, 2025, 'Ganjil', NULL, 'Penugasan Tim Reviewer Jurnal Internal', 1, NULL, 'Penelitian', 'Reviewer Kenaikan Jabatan Fungsional Lektor', NULL, 13, '2025-09-20 08:00:00', '2025-10-20 17:00:00', 'Fakultas Ilmu Komputer', NULL, NULL, NULL, 10, NULL, NULL, NULL, NULL, NULL, 10, '2025-09-15 05:04:37', '2025-09-15 05:04:37', NULL, 'IX', 54),
+(11, '003/B.8.2/TG/UNIKA/IX/2025', NULL, 'disetujui', NULL, '2025-09-15', '2025-09-15 12:04:37', '2025-09-14 22:34:11', 1, '2025-09-15 05:04:37', NULL, NULL, 'private/surat_tugas/signed/11_.pdf', 'reserved', 1, NULL, 2025, 'Ganjil', NULL, 'Penugasan Panitia Pengabdian Masyarakat', 1, NULL, 'Pengabdian', 'Validator BKD', NULL, 15, '2025-09-22 08:00:00', '2025-09-22 17:00:00', 'Desa Binaan ABC', NULL, NULL, NULL, 3, NULL, NULL, 45, 38, 0.70, 3, '2025-09-15 05:04:37', '2025-09-14 22:34:13', NULL, 'IX', 63),
+(12, '004/B.9.4/TG/UNIKA/IX/2025', NULL, 'disetujui', NULL, '2025-09-12', '2025-09-15 12:04:37', '2025-09-12 03:00:00', 1, '2025-09-15 05:04:37', NULL, NULL, NULL, 'reserved', 1, NULL, 2025, 'Ganjil', NULL, 'Penugasan Panitia Wisuda', 1, NULL, 'Lainnya', 'Lainnya', NULL, 16, '2025-09-15 08:00:00', '2025-09-20 17:00:00', 'Auditorium Albertus', NULL, NULL, NULL, 3, NULL, NULL, 45, 38, 0.90, NULL, '2025-09-15 05:04:37', '2025-09-15 05:04:37', NULL, 'IX', 75);
 
 -- --------------------------------------------------------
 
@@ -713,7 +733,15 @@ INSERT INTO `tugas_penerima` (`id`, `tugas_id`, `pengguna_id`, `nama_penerima`, 
 (13, 4, 6, '', NULL, 'I#6', 0),
 (14, 4, 19, '', NULL, 'I#19', 0),
 (17, 8, 4, '', 'Tenaga Kependidikan', 'I#4', 0),
-(20, 7, 3, '', 'Wakil Dekan Fakultas', 'I#3', 0);
+(21, 9, 10, '', NULL, 'I#10', 0),
+(24, 7, 3, '', 'Wakil Dekan Fakultas', 'I#3', 0),
+(25, 10, 8, '', NULL, 'I#8', 0),
+(26, 10, 9, '', NULL, 'I#9', 0),
+(27, 11, 16, '', NULL, 'I#16', 0),
+(28, 11, 17, '', NULL, 'I#17', 0),
+(29, 11, 18, '', NULL, 'I#18', 0),
+(30, 12, 4, '', NULL, 'I#4', 0),
+(31, 12, 5, '', NULL, 'I#5', 0);
 
 --
 -- Triggers `tugas_penerima`
@@ -780,7 +808,8 @@ CREATE TABLE `user_signatures` (
 --
 
 INSERT INTO `user_signatures` (`id`, `pengguna_id`, `ttd_path`, `default_width_mm`, `default_height_mm`, `created_at`, `updated_at`) VALUES
-(1, 10, 'private/ttd/10.png', 35, 15, '2025-09-03 13:32:08', '2025-09-03 13:32:08');
+(1, 10, 'private/ttd/10.png', 35, 15, '2025-09-03 13:32:08', '2025-09-03 13:32:08'),
+(2, 3, 'private/ttd/3.png', 35, 15, '2025-09-14 01:26:47', '2025-09-14 01:26:47');
 
 --
 -- Indexes for dumped tables
@@ -1000,7 +1029,7 @@ ALTER TABLE `master_kop_surat`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `nomor_surat_counters`
@@ -1012,7 +1041,7 @@ ALTER TABLE `nomor_surat_counters`
 -- AUTO_INCREMENT for table `notifikasi`
 --
 ALTER TABLE `notifikasi`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `pengguna`
@@ -1042,7 +1071,7 @@ ALTER TABLE `tugas_detail`
 -- AUTO_INCREMENT for table `tugas_header`
 --
 ALTER TABLE `tugas_header`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `tugas_log`
@@ -1054,13 +1083,13 @@ ALTER TABLE `tugas_log`
 -- AUTO_INCREMENT for table `tugas_penerima`
 --
 ALTER TABLE `tugas_penerima`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `user_signatures`
 --
 ALTER TABLE `user_signatures`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- Constraints for dumped tables

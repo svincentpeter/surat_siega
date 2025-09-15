@@ -251,9 +251,6 @@
                             </td>
                         </tr>
                         @empty
-                        <tr>
-                            <td colspan="9" class="text-center text-muted">Tidak ada data surat tugas ditemukan.</td>
-                        </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -291,13 +288,17 @@
     $(function () {
         $('[data-toggle="tooltip"]').tooltip();
         const table = $('#table-tugas').DataTable({
-            responsive: true,
-            autoWidth: false,
-            language: { url: "/assets/datatables/i18n/id.json" },
-            columnDefs: [
-                { targets: [7, 8], orderable: false, searchable: false }
-            ]
-        });
+    responsive: true,
+    autoWidth: false,
+    language: {
+        url: "/assets/datatables/i18n/id.json",
+        emptyTable: "{{ in_array(auth()->user()->peran_id, [2,3]) ? 'Tidak ada surat yang perlu Anda setujui.' : 'Tidak ada data surat tugas.' }}"
+    },
+    columnDefs: [
+        { targets: [7, 8], orderable: false, searchable: false }
+    ]
+});
+
 
         $('#globalSearch').on('keyup', function() { table.search(this.value).draw(); });
         $('#statusFilter').on('change', function() {

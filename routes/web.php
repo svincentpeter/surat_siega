@@ -111,26 +111,11 @@ Route::match(['post','patch'], '{id}/approve', [TugasController::class, 'approve
                 return app(\App\Http\Controllers\TugasController::class)->addRecipient(request());
             })->name('recipient.add')->middleware('can:addRecipient,tugas')->whereNumber('tugas');
 
-            // ====== ROUTE DINAMIS (TERAKHIR) ======
-            // SHOW
-            Route::get('{tugas}', function (\App\Models\TugasHeader $tugas) {
-                return app(\App\Http\Controllers\TugasController::class)->show($tugas->getKey());
-            })->name('show')->middleware('can:view,tugas')->whereNumber('tugas');
-
-            // EDIT
-            Route::get('{tugas}/edit', function (\App\Models\TugasHeader $tugas) {
-                return app(\App\Http\Controllers\TugasController::class)->edit($tugas->getKey());
-            })->name('edit')->middleware('can:update,tugas')->whereNumber('tugas');
-
-            // UPDATE
-            Route::put('{tugas}', function (\App\Models\TugasHeader $tugas) {
-                return app(\App\Http\Controllers\TugasController::class)->update(request(), $tugas->getKey());
-            })->name('update')->middleware('can:update,tugas')->whereNumber('tugas');
-
-            // DESTROY
-            Route::delete('{tugas}', function (\App\Models\TugasHeader $tugas) {
-                return app(\App\Http\Controllers\TugasController::class)->destroy($tugas->getKey());
-            })->name('destroy')->middleware('can:delete,tugas')->whereNumber('tugas');
+// ====== ROUTE DINAMIS (TERAKHIR) ======
+Route::get('{tugas}', [TugasController::class, 'show'])->name('show')->middleware('can:view,tugas')->whereNumber('tugas');
+Route::get('{tugas}/edit', [TugasController::class, 'edit'])->name('edit')->middleware('can:update,tugas')->whereNumber('tugas');
+Route::put('{tugas}', [TugasController::class, 'update'])->name('update')->middleware('can:update,tugas')->whereNumber('tugas');
+Route::delete('{tugas}', [TugasController::class, 'destroy'])->name('destroy')->middleware('can:delete,tugas')->whereNumber('tugas');
         });
 
     /*
