@@ -144,6 +144,24 @@
                 <small class="text-muted">Jika diisi, sistem akan menyimpan nilai ini apa adanya.</small>
               </div>
 
+              <hr>
+        <div class="row">
+            <div class="col-md-6 form-group">
+                <label for="tahun_periode_edit">Tahun Periode</label>
+                {{-- Kita beri ID unik agar tidak konflik dengan input tahun nomor surat --}}
+                <input type="number" id="tahun_periode_edit" name="tahun" class="form-control"
+                    value="{{ old('tahun', $tugas->tahun) }}">
+            </div>
+            <div class="col-md-6 form-group">
+                <label for="semester_periode_edit">Semester Periode</label>
+                <select name="semester" id="semester_periode_edit" class="form-control">
+                    <option value="Ganjil" @selected(old('semester', $tugas->semester) == 'Ganjil')>Ganjil</option>
+                    <option value="Genap" @selected(old('semester', $tugas->semester) == 'Genap')>Genap</option>
+                </select>
+            </div>
+        </div>
+        <hr>
+
               <div class="form-group">
                 <label for="status_penerima_display">Status Penerima (Otomatis)</label>
                 <input type="text" id="status_penerima_display" class="form-control"

@@ -22,7 +22,6 @@ class TugasHeader extends Model
         'created_at'          => 'datetime',
         'updated_at'          => 'datetime',
         'dikunci_pada'        => 'datetime',
-
         // Kolom baru dari migration:
         'kode_surat'          => 'string',
         'bulan'               => 'string',
@@ -124,12 +123,6 @@ class TugasHeader extends Model
         return $this->tanggal_surat ?: $this->tanggal_asli;
     }
 
-    // === RELASI: Sub Tugas (Jenis Tugas Spesifik) ===
-public function subTugas()
-{
-    // ganti 'sub_tugas_id' kalau nama kolommu berbeda
-    return $this->belongsTo(\App\Models\SubTugas::class, 'sub_tugas_id');
-}
 
 
 }

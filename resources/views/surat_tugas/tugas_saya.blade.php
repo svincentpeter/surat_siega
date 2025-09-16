@@ -197,17 +197,26 @@
 </a>
 
                 <a class="dropdown-item" href="{{ route('surat_tugas.show', $h->id) }}"><i class="fas fa-fw fa-eye"></i> Halaman Detail</a>
-                <div class="dropdown-divider"></div>
+                
+                {{-- Hanya tampilkan Download jika sudah disetujui --}}
                 @if($h->status_surat == 'disetujui')
+                    <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="{{ route('surat_tugas.downloadPdf', $h->id) }}" target="_blank"><i class="fas fa-fw fa-download"></i> Download PDF</a>
                 @endif
-                @if(auth()->user()->peran_id === 1 && $h->status_surat === 'draft')
-                    <a class="dropdown-item" href="{{ route('surat_tugas.edit', $h->id) }}"><i class="fas fa-fw fa-edit text-warning"></i> Edit</a>
-                    <a class="dropdown-item btn-delete" data-url="{{ route('surat_tugas.destroy', $h->id) }}"><i class="fas fa-fw fa-trash text-danger"></i> Hapus</a>
-                @endif
+                
+                {{-- Tombol Edit HANYA muncul jika Policy 'update' mengizinkan --}}
+                @can('update', $h)
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="{{ route('surat_tugas.edit', $h->id) }}"><i class="fas fa-fw fa-edit text-warning"></i> Edit / Koreksi</a>
+                @endcan
+
+                {{-- Tombol Delete HANYA muncul jika Policy 'delete' mengizinkan --}}
+                @can('delete', $h)
+                    <a class="dropdown-item btn-delete" data-url="{{ route('surat_tugas.destroy', $h->id) }}"><i class="fas fa-fw fa-trash text-danger"></i> Hapus Draft</a>
+                @endcan
             </div>
-        </div>
-    </td>
+    </div>
+</td>
 </tr>
 @endforeach
                     </tbody>

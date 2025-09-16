@@ -449,114 +449,6 @@ class TugasController extends Controller
         ]);
         return null;
     }
-
-    /**
-     * Cari ID untuk detail_tugas berdasarkan nama tugas (dan opsional jenis_tugas).
-     * Mengembalikan int ID jika ketemu, atau null jika tidak ketemu.
-     */
-    private function getDetailTugasId(?string $tugasNama, ?string $jenisTugas = null): ?int
-    {
-        $name = trim((string) $tugasNama);
-        if ($name === '') {
-            \Log::warning('getDetailTugasId: tugasNama kosong');
-            return null;
-        }
-
-        // Kandidat tabel & kolom yang umum dipakai di berbagai implementasi
-        $candidateTables = [
-            'detail_tugas',
-            'master_detail_tugas',
-            'tugas_detail',
-        ];
-        $candidateNameCols = ['nama', 'nama_detail', 'detail', 'name'];
-        $candidateJenisCols = ['jenis', 'kategori', 'jenis_tugas']; // kolom text
-        $candidateJenisIdCols = ['jenis_tugas_id', 'kategori_id'];   // kolom foreign key id
-
-        // Jika ada label jenis_tugas, kita siapkan kemungkinan ID-nya (kalau ada master jenis_tugas)
-        $jenisId = null;
-        if (!empty($jenisTugas)) {
-            try {
-                // Coba cari di tabel master umum
-                $jenisId = DB::table('jenis_tugas')->where('nama', $jenisTugas)->value('id');
-                if (!$jenisId) {
-                    // fallback kemungkinan nama tabel lain
-                    $jenisId = DB::table('master_jenis_tugas')->where('nama', $jenisTugas)->value('id');
-                }
-            } catch (\Throwable $e) {
-                // aman: jika tabel tidak ada, abaikan
-                \Log::info('getDetailTugasId: tabel jenis_tugas/master_jenis_tugas tidak tersedia atau kolom beda', [
-                    'err' => $e->getMessage()
-                ]);
-            }
-        }
-
-        foreach ($candidateTables as $table) {
-            // Cek apakah tabel ada
-            try {
-                DB::table($table)->limit(1)->get();
-            } catch (\Throwable $e) {
-                // Tabel tidak ada—lanjut kandidat berikutnya
-                continue;
-            }
-
-            foreach ($candidateNameCols as $nameCol) {
-                try {
-                    // Apakah kolom nama ada? (uji cepat; jika tidak ada akan lempar exception)
-                    DB::table($table)->select($nameCol)->limit(1)->get();
-
-                    // Build query dasar: cocokkan nama tugas (case-insensitive)
-                    $q = DB::table($table)->whereRaw("LOWER($nameCol) = ?", [mb_strtolower($name)]);
-
-                    // Tambahkan filter jenis (text) bila tersedia
-                    if (!empty($jenisTugas)) {
-                        foreach ($candidateJenisCols as $jc) {
-                            try {
-                                DB::table($table)->select($jc)->limit(1)->get();
-                                // kolom ada → coba filter exact (case-insensitive)
-                                $try = (clone $q)->whereRaw("LOWER($jc) = ?", [mb_strtolower($jenisTugas)])->value('id');
-                                if ($try) return (int) $try;
-                            } catch (\Throwable $e) {
-                                // kolom jenis ini tidak ada—abaikan
-                            }
-                        }
-                        // Tambahkan filter jenis id bila kita punya jenisId
-                        if ($jenisId) {
-                            foreach ($candidateJenisIdCols as $jidc) {
-                                try {
-                                    DB::table($table)->select($jidc)->limit(1)->get();
-                                    $try = (clone $q)->where($jidc, $jenisId)->value('id');
-                                    if ($try) return (int) $try;
-                                } catch (\Throwable $e) {
-                                    // kolom id jenis tidak ada—abaikan
-                                }
-                            }
-                        }
-                    }
-
-                    // Jika tidak ada filter jenis yang cocok, coba ambil berdasarkan nama saja
-                    $id = $q->value('id');
-                    if ($id) return (int) $id;
-
-                    // Terakhir, coba pencarian mirip (LIKE) bila exact tidak ketemu
-                    $likeId = DB::table($table)
-                        ->where($nameCol, 'LIKE', $name)
-                        ->orWhere($nameCol, 'LIKE', '%' . $name . '%')
-                        ->value('id');
-                    if ($likeId) return (int) $likeId;
-                } catch (\Throwable $e) {
-                    // Kolom name tidak ada atau query gagal → lanjut kandidat berikutnya
-                    continue;
-                }
-            }
-        }
-
-        \Log::warning('getDetailTugasId: tidak ditemukan', [
-            'tugas' => $name,
-            'jenis' => $jenisTugas,
-        ]);
-        return null;
-    }
-
     /**
      * Tambah 1 penerima (internal/eksternal) ke surat yang sudah ada.
      * Endpoint ini memakai StoreTugasPenerimaRequest agar validasi internal/eksternal tegas.
@@ -610,102 +502,94 @@ class TugasController extends Controller
     }
 
     // START PATCH: Approve + Digital Sign
-    public function approve(Request $request, $id)
+    public function approve(Request $request, TugasHeader $tugas)
 {
     $user = auth()->user();
     if (!in_array((int)$user->peran_id, [2, 3], true)) {
         abort(403, 'Hanya Dekan/Wakil Dekan yang dapat menyetujui surat.');
     }
 
-    $tugas = TugasHeader::findOrFail($id);
+    // TIDAK PERLU FindOrFail($id) lagi. $tugas sudah ada dari Route Model Binding.
     if (!in_array($tugas->status_surat, ['pending', 'draft'], true)) {
-        return back()->with('error', 'Surat ini sudah diproses dan tidak bisa disetujui ulang.');
-    }
-
-    // Validasi baru sesuai dengan form approve-controls.blade.php
-    $validated = $request->validate([
-        'ttd_w_mm'    => 'required|integer|min:30|max:60',
-        'cap_w_mm'    => 'required|integer|min:25|max:45',
-        'cap_opacity' => 'required|numeric|min:0.7|max:1.0',
-    ]);
-
-    DB::beginTransaction();
-    try {
-        // Hapus config lama yang tidak terpakai
-        $tugas->ttd_config = null;
-        $tugas->cap_config = null;
-
-        // Simpan pengaturan baru ke kolom yang sudah kita buat
-        $tugas->ttd_w_mm    = $validated['ttd_w_mm'];
-        $tugas->cap_w_mm    = $validated['cap_w_mm'];
-        $tugas->cap_opacity = $validated['cap_opacity'];
-
-        // Finalisasi status surat
-        if (empty($tugas->tanggal_surat)) {
-            $tugas->tanggal_surat = now()->toDateString();
+            return back()->with('error', 'Surat ini sudah diproses dan tidak bisa disetujui ulang.');
         }
-        $tugas->status_surat = 'disetujui';
-        $tugas->signed_at    = now();
-        $tugas->save();
 
-        // Render & simpan PDF yang sudah ditandatangani
-        $pdfBytes = $this->renderTugasPdfWithSign($tugas);
-        $pdfPath  = "private/surat_tugas/signed/{$tugas->id}_{$tugas->nomor_surat_hash}.pdf"; // Tambah hash agar unik
-        Storage::disk('local')->put($pdfPath, $pdfBytes);
-        $tugas->signed_pdf_path = $pdfPath;
-        $tugas->save();
-        
-        // Kirim notifikasi ke penerima
-        app(NotifikasiService::class)->notifyApproved($tugas);
+        $validated = $request->validate([
+            'ttd_w_mm'    => 'required|integer|min:30|max:60',
+            'cap_w_mm'    => 'required|integer|min:25|max:45',
+            'cap_opacity' => 'required|numeric|min:0.7|max:1.0',
+        ]);
 
-        DB::commit();
-        
-        return redirect()->route('surat_tugas.approve_list')->with('success', 'Surat berhasil disetujui & ditandatangani.');
-        
-    } catch (\Throwable $e) {
-        DB::rollBack();
-        \Log::error('Gagal approve surat tugas #' . $id, ['error' => $e->getMessage()]);
-        return back()->with('error', 'Terjadi kesalahan sistem saat menyetujui surat.');
+        DB::beginTransaction();
+        try {
+            $tugas->ttd_config = null;
+            $tugas->cap_config = null;
+            $tugas->ttd_w_mm    = $validated['ttd_w_mm'];
+            $tugas->cap_w_mm    = $validated['cap_w_mm'];
+            $tugas->cap_opacity = $validated['cap_opacity'];
+
+            if (empty($tugas->tanggal_surat)) {
+                $tugas->tanggal_surat = now()->toDateString();
+            }
+            $tugas->status_surat = 'disetujui';
+            $tugas->signed_at    = now();
+            $tugas->save();
+
+            $pdfBytes = $this->renderTugasPdfWithSign($tugas);
+            $pdfPath  = "private/surat_tugas/signed/{$tugas->id}_" . md5($tugas->nomor) . ".pdf";
+            Storage::disk('local')->put($pdfPath, $pdfBytes);
+            $tugas->signed_pdf_path = $pdfPath;
+            $tugas->save();
+
+            app(NotifikasiService::class)->notifyApproved($tugas);
+
+            DB::commit();
+            return redirect()->route('surat_tugas.approve_list')->with('success', 'Surat berhasil disetujui & ditandatangani.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            \Log::error('Gagal approve surat tugas #' . $tugas->id, ['error' => $e->getMessage()]);
+            return back()->with('error', 'Terjadi kesalahan sistem saat menyetujui surat.');
+        }
     }
-}
+
 
 
     // ====== helper kecil di controller ======
 
     /**
- * Menyiapkan aset visual (gambar base64 & ukuran) untuk TTD dan Cap.
- * Didesain untuk sistem baru tanpa offset.
- */
-private function getSigningAssets(TugasHeader $tugas): array
-{
-    // 1. Ambil gambar TTD dari penandatangan
-    $ttdImageB64 = null;
-    $penandatangan = $tugas->penandatanganUser;
-    if ($penandatangan && $penandatangan->signature && !empty($penandatangan->signature->ttd_path)) {
-        $ttdImageB64 = $this->b64FromStorage($penandatangan->signature->ttd_path);
+     * Menyiapkan aset visual (gambar base64 & ukuran) untuk TTD dan Cap.
+     * Didesain untuk sistem baru tanpa offset.
+     */
+    private function getSigningAssets(TugasHeader $tugas): array
+    {
+        // 1. Ambil gambar TTD dari penandatangan
+        $ttdImageB64 = null;
+        $penandatangan = $tugas->penandatanganUser;
+        if ($penandatangan && $penandatangan->signature && !empty($penandatangan->signature->ttd_path)) {
+            $ttdImageB64 = $this->b64FromStorage($penandatangan->signature->ttd_path);
+        }
+
+        // 2. Ambil gambar Cap dari Master Kop Surat
+        $capImageB64 = null;
+        $kop = MasterKopSurat::query()->first();
+        if ($kop && !empty($kop->cap_path)) {
+            $capImageB64 = $this->b64FromStorage($kop->cap_path);
+        }
+
+        // 3. Ambil ukuran & opasitas dari database, dengan fallback default yang aman
+        $ttdW = $tugas->ttd_w_mm ?? 42;       // Default 42mm
+        $capW = $tugas->cap_w_mm ?? 35;       // Default 35mm
+        $capOpacity = $tugas->cap_opacity ?? 0.95; // Default 0.95
+
+        return compact(
+            'ttdImageB64',
+            'capImageB64',
+            'ttdW',
+            'capW',
+            'capOpacity',
+            'kop' // kita kembalikan juga objek $kop untuk keperluan lain
+        );
     }
-
-    // 2. Ambil gambar Cap dari Master Kop Surat
-    $capImageB64 = null;
-    $kop = MasterKopSurat::query()->first();
-    if ($kop && !empty($kop->cap_path)) {
-        $capImageB64 = $this->b64FromStorage($kop->cap_path);
-    }
-
-    // 3. Ambil ukuran & opasitas dari database, dengan fallback default yang aman
-    $ttdW = $tugas->ttd_w_mm ?? 42;       // Default 42mm
-    $capW = $tugas->cap_w_mm ?? 35;       // Default 35mm
-    $capOpacity = $tugas->cap_opacity ?? 0.95; // Default 0.95
-
-    return compact(
-        'ttdImageB64',
-        'capImageB64',
-        'ttdW',
-        'capW',
-        'capOpacity',
-        'kop' // kita kembalikan juga objek $kop untuk keperluan lain
-    );
-}
 
     private function readCfg($cfg)
     {
@@ -739,29 +623,29 @@ private function getSigningAssets(TugasHeader $tugas): array
      * Render PDF dan embed TTD/Cap sebagai base64 <img>.
      */
     private function renderTugasPdfWithSign(TugasHeader $tugas): string
-{
-    // Panggil helper baru kita yang sudah bersih
-    $signAssets = $this->getSigningAssets($tugas);
+    {
+        // Panggil helper baru kita yang sudah bersih
+        $signAssets = $this->getSigningAssets($tugas);
 
-    $penerimaList = $tugas->penerima->pluck('pengguna.nama_lengkap')->filter()->values()->all();
+        $penerimaList = $tugas->penerima->pluck('pengguna.nama_lengkap')->filter()->values()->all();
 
-    $html = view('surat_tugas.surat_pdf', array_merge(
-        [
-            'tugas'        => $tugas,
-            'penerimaList' => $penerimaList,
-        ],
-        $signAssets // Langsung gabungkan semua aset dari helper
-    ))->render();
+        $html = view('surat_tugas.surat_pdf', array_merge(
+            [
+                'tugas'        => $tugas,
+                'penerimaList' => $penerimaList,
+            ],
+            $signAssets // Langsung gabungkan semua aset dari helper
+        ))->render();
 
-    return Pdf::loadHTML($html)
-        ->setPaper('A4', 'portrait')
-        ->setOptions([
-            'isHtml5ParserEnabled' => true,
-            'isRemoteEnabled'      => true,
-            'dpi'                  => 96,
-            'chroot'               => public_path(),
-        ])->output();
-}
+        return Pdf::loadHTML($html)
+            ->setPaper('A4', 'portrait')
+            ->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled'      => true,
+                'dpi'                  => 96,
+                'chroot'               => public_path(),
+            ])->output();
+    }
 
 
 
@@ -795,49 +679,51 @@ private function getSigningAssets(TugasHeader $tugas): array
     }
 
     public function show(Request $request, TugasHeader $tugas)
-{
-    // Kita tidak perlu lagi mencari $tugas, karena sudah otomatis di-inject oleh Laravel
-    $tugas->load(['pembuat', 'penandatanganUser.peran', 'penerima.pengguna']);
-    
+    {
+        // Kita tidak perlu lagi mencari $tugas, karena sudah otomatis di-inject oleh Laravel
+        $tugas->load(['pembuat', 'penandatanganUser.peran', 'penerima.pengguna']);
 
-    // Di sini Anda bisa menambahkan logika otorisasi (Gate)
-    // Contoh: Gate::authorize('view', $tugas);
 
-    // Panggil helper utama untuk mendapatkan semua aset visual
-    $assets = $this->getSigningAssets($tugas);
+        // Di sini Anda bisa menambahkan logika otorisasi (Gate)
+        // Contoh: Gate::authorize('view', $tugas);
 
-    // Siapkan data terstruktur untuk pratinjau di halaman approval
-    // Ambil nilai dari request (untuk live preview) atau dari database/default
-    $previewData = [
-        'ttd_image_b64' => $assets['ttdImageB64'],
-        'cap_image_b64' => $assets['capImageB64'],
-        'ttd_w_mm'      => $request->input('ttd_w_mm', $assets['ttdW']),
-        'cap_w_mm'      => $request->input('cap_w_mm', $assets['capW']),
-        'cap_opacity'   => $request->input('cap_opacity', $assets['capOpacity']),
-    ];
+        // Panggil helper utama untuk mendapatkan semua aset visual
+        $assets = $this->getSigningAssets($tugas);
 
-    // Jika ini adalah request AJAX untuk live preview, kembalikan hanya partialnya
-    if ($request->input('partial') === 'true') {
-    return view('surat_tugas.partials.approve-preview', [ // <-- Tambahkan .partials di sini
-        'tugas'   => $tugas,
-        'kop'     => $assets['kop'],
-        'preview' => $previewData,
-    ]);
-}
+        // Siapkan data terstruktur untuk pratinjau di halaman approval
+        // Ambil nilai dari request (untuk live preview) atau dari database/default
+        $previewData = [
+            'ttd_image_b64' => $assets['ttdImageB64'],
+            'cap_image_b64' => $assets['capImageB64'],
+            'ttd_w_mm'      => $request->input('ttd_w_mm', $assets['ttdW']),
+            'cap_w_mm'      => $request->input('cap_w_mm', $assets['capW']),
+            'cap_opacity'   => $request->input('cap_opacity', $assets['capOpacity']),
+        ];
 
-    // Jika request biasa, render seluruh halaman show.blade.php
-    return view('surat_tugas.show', [
-        'tugas'   => $tugas,
-        'kop'     => $assets['kop'],
-        'preview' => $previewData, // Kirim data pratinjau terstruktur
-    ]);
-}
+        // Jika ini adalah request AJAX untuk live preview, kembalikan hanya partialnya
+        if ($request->input('partial') === 'true') {
+            return view('surat_tugas.partials.approve-preview', [ // <-- Tambahkan .partials di sini
+                'tugas'   => $tugas,
+                'kop'     => $assets['kop'],
+                'preview' => $previewData,
+            ]);
+        }
+
+        // Jika request biasa, render seluruh halaman show.blade.php
+        return view('surat_tugas.show', [
+            'tugas'   => $tugas,
+            'kop'     => $assets['kop'],
+            'preview' => $previewData, // Kirim data pratinjau terstruktur
+        ]);
+    }
 
     public function edit(TugasHeader $tugas)
     {
         $user    = Auth::user();
         $peranId = $user->peran_id;
-        $tugas = TugasHeader::with(['penerima.pengguna'])->findOrFail($id);
+        // Variabel $tugas sudah otomatis tersedia karena Route Model Binding
+        // Kita hanya perlu memastikan relasinya sudah dimuat jika perlu
+        $tugas->load(['penerima.pengguna']);
 
         $nomorParts = explode('/', $tugas->nomor);
         $baseNomor = '/' . implode('/', array_slice($nomorParts, 1));
@@ -900,8 +786,10 @@ private function getSigningAssets(TugasHeader $tugas): array
     // GANTI SELURUH METHOD update() ANDA DENGAN INI
     public function update(Request $request, TugasHeader $tugas)
     {
-        \Log::info('Proses update Surat Tugas #' . $id . ' dimulai.', $request->all());
-        $tugas = TugasHeader::with(['penerima'])->findOrFail($id);
+        // $tugas sudah ada dari Route Model Binding. Kita bisa langsung pakai ID-nya.
+        \Log::info('Proses update Surat Tugas #' . $tugas->id . ' dimulai.', $request->all());
+        // Tidak perlu FindOrFail lagi. Muat relasi jika perlu (meskipun update() di bawah tidak membutuhkannya).
+        $tugas->load(['penerima']);
         $mode = $this->resolveMode($request);
         $oldStatus = $tugas->status_surat;
         $newStatus = $oldStatus;
@@ -930,7 +818,7 @@ private function getSigningAssets(TugasHeader $tugas): array
             'semester' => 'required|string|in:Ganjil,Genap',
             'nama_pembuat' => 'required|exists:pengguna,id',
             'asal_surat' => 'required|exists:pengguna,id',
-            'nomor' => ['required', 'string', Rule::unique('tugas_header')->ignore($id)],
+            'nomor' => ['required', 'string', Rule::unique('tugas_header')->ignore($tugas->id)], 
         ];
         $validated = $request->validate($rules);
         $segmen = $validated['status_penerima'] ?? null;
@@ -1001,7 +889,7 @@ private function getSigningAssets(TugasHeader $tugas): array
         $user    = Auth::user();
         $peranId = $user->peran_id;
 
-        $tugas = TugasHeader::findOrFail($id);
+        // Hapus baris FindOrFail($id) di atas. $tugas sudah ada dari Laravel.
         if (!($peranId === 1 && $tugas->dibuat_oleh === $user->id && $tugas->status_surat === 'draft')) {
             return redirect()->route('surat_tugas.mine')
                 ->with('error', 'Anda tidak berhak menghapus surat ini.');
@@ -1011,14 +899,14 @@ private function getSigningAssets(TugasHeader $tugas): array
         return redirect()->route('surat_tugas.mine')->with('success', 'Surat tugas berhasil dihapus.');
     }
 
-    public function highlight($id)
+    public function highlight(TugasHeader $tugas)
     {
-        $tugas = TugasHeader::with([
+        $tugas->load([
             'pembuat',
             'penandatanganUser',
             'asalSurat',
             'penerima.pengguna'
-        ])->findOrFail($id);
+        ]);
         $penerimaList = $tugas->penerima->pluck('pengguna.nama_lengkap')->all();
 
         return response()
@@ -1027,44 +915,45 @@ private function getSigningAssets(TugasHeader $tugas): array
     }
 
 
-    public function downloadPdf($id)
-{
-    $tugas = TugasHeader::with([
-        'pembuat',
-        'penandatanganUser',
-        'penerima.pengguna.peran',
-        'subTugas'
-    ])->findOrFail($id);
+    public function downloadPdf(TugasHeader $tugas)
+    {
+        // $tugas sudah ada dari Route Model Binding. Kita hanya perlu load relasi.
+        $tugas->load([
+            'pembuat',
+            'penandatanganUser',
+            'penerima.pengguna.peran',
+            'tugasDetail.subTugas',
+        ]);
 
-    // Cukup panggil renderTugasPdfWithSign yang sudah diperbaiki
-    $bytes = $this->renderTugasPdfWithSign($tugas);
+        // Cukup panggil renderTugasPdfWithSign yang sudah diperbaiki
+        $bytes = $this->renderTugasPdfWithSign($tugas);
 
-    $safeNomor = preg_replace('/[\/\\\\]+/', '-', (string)($tugas->nomor ?? 'TanpaNomor'));
-    return response($bytes, 200, [
-        'Content-Type'        => 'application/pdf',
-        'Content-Disposition' => 'inline; filename="SuratTugas_' . $safeNomor . '.pdf"',
-    ]);
-}
+        $safeNomor = preg_replace('/[\/\\\\]+/', '-', (string)($tugas->nomor ?? 'TanpaNomor'));
+        return response($bytes, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="SuratTugas_' . $safeNomor . '.pdf"',
+        ]);
+    }
 
     public function preview($tugasId)
-{
-    $tugas = TugasHeader::with([
-        'pembuat',
-        'penandatanganUser',
-        'penerima.pengguna.peran',
-        'subTugas',
-    ])->findOrFail($tugasId);
+    {
+        $tugas = TugasHeader::with([
+            'pembuat',
+            'penandatanganUser',
+            'penerima.pengguna.peran',
+            'tugasDetail.subTugas',
+        ])->findOrFail($tugasId);
 
-    // Panggil helper baru kita
-    $signAssets = $this->getSigningAssets($tugas);
-    $penerimaList = $tugas->penerima->pluck('pengguna.nama_lengkap')->filter()->values()->all();
+        // Panggil helper baru kita
+        $signAssets = $this->getSigningAssets($tugas);
+        $penerimaList = $tugas->penerima->pluck('pengguna.nama_lengkap')->filter()->values()->all();
 
-    return response()->view('surat_tugas.preview', array_merge(
-        [
-            'tugas'        => $tugas,
-            'penerimaList' => $penerimaList,
-        ],
-        $signAssets // Langsung gabungkan semua aset dari helper
-    ))->header('X-Frame-Options', 'ALLOWALL');
-}
+        return response()->view('surat_tugas.preview', array_merge(
+            [
+                'tugas'        => $tugas,
+                'penerimaList' => $penerimaList,
+            ],
+            $signAssets // Langsung gabungkan semua aset dari helper
+        ))->header('X-Frame-Options', 'ALLOWALL');
+    }
 }

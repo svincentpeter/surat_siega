@@ -2,60 +2,60 @@
 
 namespace App\Mail;
 
+use App\Models\TugasHeader;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use App\Models\TugasHeader;
+use Illuminate\Support\Facades\Storage;
 
-class SuratTugasFinal extends Mailable
+class SuratTugasFinal extends Mailable implements ShouldQueue // Implementasi ShouldQueue penting!
 {
     use Queueable, SerializesModels;
 
+    public $tugas;
+    public $subjectLine;
+
     /**
      * Create a new message instance.
+     *
+     * @return void
      */
-     public function __construct(public TugasHeader $tugas, public string $pdfPath) {}
+    public function __construct(TugasHeader $tugas)
+    {
+        $this->tugas = $tugas;
+        $this->subjectLine = "Surat Tugas Baru Terbit: " . ($tugas->nama_umum ?? $tugas->tugas);
+    }
 
+    /**
+     * Build the message.
+     *
+     * @return $this
+     */
     public function build()
     {
-        return $this->subject('[FINAL] Surat Tugas '.$this->tugas->nomor)
-                    ->markdown('emails.surat_tugas.final')
-                    ->attach($this->pdfPath, [
-                        'as' => 'Surat-Tugas-'.$this->tugas->id.'.pdf',
-                        'mime' => 'application/pdf',
-                    ]);
-    }
+        $emailView = $this->subject($this->subjectLine)
+                          ->view('emails.surat_tugas.final') // Pastikan Anda punya view ini
+                          ->with([
+                              'namaSurat' => $this->tugas->nama_umum ?? $this->tugas->tugas,
+                              'nomorSurat' => $this->tugas->nomor,
+                              'urlSurat' => route('surat_tugas.show', $this->tugas->id),
+                          ]);
 
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
-    {
-        return new Envelope(
-            subject: 'Surat Tugas Final',
-        );
-    }
+        // Jika PDF yang ditandatangani ada, lampirkan
+        if ($this->tugas->signed_pdf_path && Storage::disk('local')->exists($this->tugas->signed_pdf_path)) {
+            
+            $safeNomor = preg_replace('/[\/\\\\]+/', '-', (string)($this->tugas->nomor ?? 'SuratTugas'));
+            
+            $emailView->attachFromStorage(
+                $this->tugas->signed_pdf_path,
+                'SuratTugas_' . $safeNomor . '.pdf',
+                [
+                    'mime' => 'application/pdf',
+                ]
+            );
+        }
 
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            markdown: 'emails.surat_tugas.final',
-        );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
+        return $emailView;
     }
 }
